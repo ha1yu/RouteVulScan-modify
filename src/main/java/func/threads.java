@@ -6,10 +6,9 @@ import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
 
 
-import com.sun.jmx.snmp.tasks.Task;
-
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-public class threads implements Task {
+public class threads implements Runnable {
     private Map<String, Object> zidian;
     private vulscan vul;
     private IHttpRequestResponse newHttpRequestResponse;
@@ -33,17 +32,14 @@ public class threads implements Task {
     }
 
     @Override
-    public void cancel() {
-
-    }
-
-    @Override
     public void run() {
         go(this.zidian, this.vul, this.newHttpRequestResponse, this.heads, this.Bypass_List);
 
     }
 
     private static void go(Map<String, Object> zidian, vulscan vul, IHttpRequestResponse newHttpRequestResponse, List<String> heads, List<String> Bypass_List) {
+        // 每线程拷贝一份请求头,避免就地修改污染共享的原始头列表(修复多线程数据竞争)
+        heads = new ArrayList<>(heads);
 
         String name = (String) zidian.get("name");
         boolean loaded = (boolean) zidian.get("loaded");
@@ -71,11 +67,9 @@ public class threads implements Task {
             byte[] request = vul.burp.help.buildHttpRequest(url);
             // 添加head
             if (vul.burp.Carry_head) {
-                synchronized (heads) {
-                    heads.remove(0);
-                    heads.add(0, vul.burp.help.analyzeRequest(request).getHeaders().get(0));
-                    request = vul.burp.help.buildHttpMessage(heads, new byte[]{});
-                }
+                heads.remove(0);
+                heads.add(0, vul.burp.help.analyzeRequest(request).getHeaders().get(0));
+                request = vul.burp.help.buildHttpMessage(heads, new byte[]{});
             }
             if ("POST".equals(zidian.get("method"))) {
                 request = vul.burp.help.toggleRequestMethod(request);
@@ -94,7 +88,7 @@ public class threads implements Task {
                 return;
             }
 
-            if (states.contains(new Integer(vul.burp.help.analyzeResponse(newHttpRequestResponse.getResponse()).getStatusCode()))) {
+            if (states.contains(Integer.valueOf(vul.burp.help.analyzeResponse(newHttpRequestResponse.getResponse()).getStatusCode()))) {
                 byte[] resp = newHttpRequestResponse.getResponse();
                 Pattern re_rule = Pattern.compile(re, Pattern.CASE_INSENSITIVE);
                 Matcher pipe = re_rule.matcher(vul.burp.help.bytesToString(resp));

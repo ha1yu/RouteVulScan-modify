@@ -16,6 +16,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -30,7 +31,8 @@ public class BurpExtender implements IBurpExtender, IScannerCheck, IContextMenuF
     public IExtensionHelpers help;
     public Tags tags;
     private UrlRepeat urlC;
-    public Collection<String> history_url = new LinkedList<String>();
+    public Set<String> history_url = ConcurrentHashMap.newKeySet();
+    public static final int MAX_HISTORY_URL = 50000;
     public static String EXPAND_NAME = "Route Vulnerable Scan";
     public Config Config_l;
     public ExecutorService ThreadPool;
@@ -40,7 +42,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck, IContextMenuF
     public boolean DomainScan = false;
     public static String Download_Yaml_protocol = "https";
 
-    public static String VERSION = "1.5.4";
+    public static String VERSION = "1.6.0";
     public static String Download_Yaml_host = "raw.githubusercontent.com";
     public static int Download_Yaml_port = 443;
     public static String Download_Yaml_file = "/F6JO/RouteVulScan/main/Config_yaml.yaml";
@@ -83,7 +85,6 @@ public class BurpExtender implements IBurpExtender, IScannerCheck, IContextMenuF
             Pattern pattern = Pattern.compile(re);
             Matcher matcher = pattern.matcher(baseRequestResponse.getHttpService().getHost());
             if (matcher.find()) {
-                this.ThreadPool = Executors.newFixedThreadPool((Integer) Config_l.spinner1.getValue());
                 IHttpService Http_Service = baseRequestResponse.getHttpService();
                 String Root_Url = Http_Service.getProtocol() + "://" + Http_Service.getHost() + ":" + String.valueOf(Http_Service.getPort());
                 try {
@@ -166,7 +167,6 @@ class Right_click_monitor implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        burp.ThreadPool = Executors.newFixedThreadPool((Integer) burp.Config_l.spinner1.getValue());
         IHttpRequestResponse[] RequestResponses = invocation.getSelectedMessages();
         if (head) {
             JTextArea jTextArea = new JTextArea(1, 1);

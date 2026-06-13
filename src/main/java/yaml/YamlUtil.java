@@ -99,28 +99,37 @@ public class YamlUtil {
 
 
     public static void MergerUpdateYamlFunc(Map<String, Object> newYaml){
+        // 单次读取旧配置,在内存中合并,最后一次写回(避免循环内反复 readYaml 导致的 O(n²) IO)
         Map<String, Object> oldYaml = YamlUtil.readYaml(BurpExtender.Yaml_Path);
         List<Map<String, Object>> oldYamlList = (List<Map<String, Object>>)oldYaml.get("Load_List");
+        if (oldYamlList == null) {
+            oldYamlList = new ArrayList<Map<String, Object>>();
+        }
         List<Map<String, Object>> newYamlList = (List<Map<String, Object>>)newYaml.get("Load_List");
-        for (Map<String, Object> i : newYamlList){
-            if (!YamlUtil.inYamlList(oldYamlList,i)){
-                int id = 0;
-                for (Map<String, Object> zidian : (List<Map<String, Object>>)YamlUtil.readYaml(BurpExtender.Yaml_Path).get("Load_List")) {
-                    if ((int) zidian.get("id") > id) {
-                        id = (int) zidian.get("id");
-                    }
-                }
-                id += 1;
-                i.remove("id");
-                i.put("id",id);
-                YamlUtil.addYaml(i,BurpExtender.Yaml_Path);
+
+        // 计算当前最大 id,新增规则递增分配
+        int maxId = 0;
+        for (Map<String, Object> zidian : oldYamlList) {
+            Object idObj = zidian.get("id");
+            if (idObj instanceof Integer && (Integer) idObj > maxId) {
+                maxId = (Integer) idObj;
             }
         }
+        for (Map<String, Object> i : newYamlList){
+            if (!YamlUtil.inYamlList(oldYamlList,i)){
+                maxId += 1;
+                i.remove("id");
+                i.put("id",maxId);
+                oldYamlList.add(i);
+            }
+        }
+
+        // 合并 Bypass_List
         List<String> oldBypassList = (List<String>)oldYaml.get("Bypass_List");
         List<String> newBypassList = (List<String>)newYaml.get("Bypass_List");
         if (oldBypassList == null){
-            oldBypassList = newBypassList;
-        }else {
+            oldBypassList = (newBypassList != null) ? new ArrayList<String>(newBypassList) : new ArrayList<String>();
+        }else if (newBypassList != null){
             for (String i : newBypassList){
                 if (!oldBypassList.contains(i)){
                     oldBypassList.add(i);
@@ -128,8 +137,8 @@ public class YamlUtil {
             }
         }
 
-        Map<String, Object> save = (Map<String, Object>) new HashMap<String, Object>();
-        save.put("Load_List", (List<Map<String, Object>>) YamlUtil.readYaml(BurpExtender.Yaml_Path).get("Load_List"));
+        Map<String, Object> save = new HashMap<String, Object>();
+        save.put("Load_List", oldYamlList);
         save.put("Bypass_List", oldBypassList);
         YamlUtil.writeYaml(save,BurpExtender.Yaml_Path);
 

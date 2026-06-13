@@ -109,6 +109,7 @@ RouteVulScan是使用java语言基于burpsuite api开发的可以递归检测脆
 * 2023-05-09 添加类似模板语言的标记，可在Config中配置标记获取当前请求的各类信息并当作路径或正则【✓】
 * 2024-03-07 展示面板加入排序，优化bypass功能【✓】
 * 修改UI适配
+* 2026-06-13 修复多项缺陷、解除 JDK 内部 API 耦合并移除 rt.jar、构建现代化(Gradle 9/JDK 21)、新增单元测试【✓】详见 [CHANGELOG.md](./CHANGELOG.md)
 
 ## 开心值
 

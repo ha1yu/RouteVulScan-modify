@@ -213,7 +213,6 @@ public class Bfunc {
                 domain = parts[parts.length-2] + "." + parts[parts.length-1];
                 return  domain;
             }else if(mode.equals("name")){
-                String lastPart = parts[parts.length - 1];
                 return parts[parts.length - 2];
             }
 
@@ -226,8 +225,13 @@ public class Bfunc {
         heads.remove(heads.get(0));
         Map<String,String> headmap = new HashMap<String,String>();
         for (String head:heads){
-            String key = head.substring(0, head.indexOf(":")).toLowerCase();
-            String value = head.substring(head.indexOf(":") + 2);
+            int idx = head.indexOf(":");
+            if (idx < 0) {
+                // 不含冒号的非法头行,跳过避免 substring 崩溃
+                continue;
+            }
+            String key = head.substring(0, idx).trim().toLowerCase();
+            String value = head.substring(idx + 1).trim();
             headmap.put(key,value);
         }
         return headmap;

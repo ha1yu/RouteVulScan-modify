@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow' version '5.2.0'
+    id 'com.gradleup.shadow' version '8.3.1'
 }
 
 group 'org.example'
@@ -10,18 +10,24 @@ compileJava {
     options.encoding = "UTF-8"
 }
 
+java {
+    // 保持 Java 8 字节码以兼容 Burp 内置 JRE
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 repositories {
     mavenCentral()
 }
 
 
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
-    compile('net.portswigger.burp.extender:burp-extender-api:1.7.13')
-    compile('com.intellij:forms_rt:7.0.3')
-    compile group: 'org.yaml', name: 'snakeyaml', version: '1.28'
-    compile fileTree(dir: 'lib', includes: ['*jar'])
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
+    implementation 'net.portswigger.burp.extender:burp-extender-api:1.7.13'
+    implementation 'com.intellij:forms_rt:7.0.3'
+    implementation group: 'org.yaml', name: 'snakeyaml', version: '1.28'
 }
 
 test {

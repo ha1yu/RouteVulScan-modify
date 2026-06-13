@@ -465,7 +465,7 @@ class Remove_action implements ActionListener {
     public Integer[] reversal(int[] int_array) {
         Integer newScores[] = new Integer[int_array.length];
         for (int i = 0; i < int_array.length; i++) {
-            newScores[i] = new Integer(int_array[i]);
+            newScores[i] = int_array[i]; // 自动装箱
         }
 
         Arrays.sort(newScores, Collections.reverseOrder());

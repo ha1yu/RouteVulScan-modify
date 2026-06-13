@@ -7,9 +7,12 @@ import yaml.YamlUtil;
 
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,6 +26,8 @@ public class vulscan {
     public String Path_record;
     public BurpExtender burp;
     public IHttpService httpService;
+
+    private ExecutorService pool;
 
 
     public vulscan(BurpExtender burp, BurpAnalyzedRequest Root_Request,byte[] request) {
@@ -39,11 +44,11 @@ public class vulscan {
         httpService = this.Root_Request.requestResponse().getHttpService();
         IRequestInfo analyze_Request = help.analyzeRequest(httpService, request);
         List<String> heads = analyze_Request.getHeaders();
-        burp.ThreadPool = Executors.newFixedThreadPool((Integer) burp.Config_l.spinner1.getValue());
+        this.pool = Executors.newFixedThreadPool((Integer) burp.Config_l.spinner1.getValue());
 
 
-        // 判断请求方法为POST
-        if (this.help.analyzeRequest(request).getMethod() == "POST")
+        // 判断请求方法为POST(必须用 equals 比较,原 == 比较引用恒为 false,导致 POST→GET 转换永不生效)
+        if ("POST".equals(this.help.analyzeRequest(request).getMethod()))
             //将POST切换为GET请求
             request = this.help.toggleRequestMethod(request);
         // 获取所有参数
@@ -73,10 +78,15 @@ public class vulscan {
             paths = new String[]{""};
         }
         List<String> Bypass_List = (List<String>) Yaml_Map.get("Bypass_List");
-        if (burp.DomainScan) {
-            LaunchPath(true, domainNames, Listx, newHttpRequestResponse, heads, Bypass_List);
+        try {
+            if (burp.DomainScan) {
+                LaunchPath(true, domainNames, Listx, newHttpRequestResponse, heads, Bypass_List);
+            }
+            LaunchPath(false,paths,Listx,newHttpRequestResponse,heads,Bypass_List);
+        } finally {
+            // 无论正常结束还是异常,都关闭本次扫描的线程池,避免线程泄漏
+            this.pool.shutdown();
         }
-        LaunchPath(false,paths,Listx,newHttpRequestResponse,heads,Bypass_List);
 
 
 
@@ -107,33 +117,29 @@ public class vulscan {
 
             if (is_InList) {
                 synchronized (this.burp.history_url) {
+                    if (this.burp.history_url.size() >= BurpExtender.MAX_HISTORY_URL) {
+                        this.burp.history_url.clear();
+                        this.burp.call.printError("history_url reached upper limit, cleared");
+                    }
                     this.burp.history_url.add(url);
                 }
+                List<Future<?>> futures = new ArrayList<>();
                 for (Map<String, Object> zidian : Listx) {
-                    this.burp.ThreadPool.execute(new threads(zidian, this, newHttpRequestResponse, heads, Bypass_List));
+                    futures.add(this.pool.submit(new threads(zidian, this, newHttpRequestResponse, heads, Bypass_List)));
                 }
-
-
-                int whileSiz = 0;
-                while (true) {
-//                    this.burp.call.printError(String.valueOf(whileSiz));
-                    if (whileSiz >= 10){
-                        this.burp.ThreadPool.shutdownNow();
-                        this.burp.ThreadPool = Executors.newFixedThreadPool((Integer) this.burp.Config_l.spinner1.getValue());
-                        this.burp.call.printError("Timeout: " + url + "/*");
-                        break;
-                    }
-                    // 防止线程混乱，睡眠3.1秒
+                // 等待本层所有规则任务完成;单任务超过 30s 则仅取消该任务(不再 shutdown 整池导致泄漏)
+                for (Future<?> future : futures) {
                     try {
-                        Thread.sleep(3100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    if (((ThreadPoolExecutor) this.burp.ThreadPool).getActiveCount() == 0) {
+                        future.get(30, TimeUnit.SECONDS);
+                    } catch (TimeoutException te) {
+                        future.cancel(true);
+                        this.burp.call.printError("Timeout: " + url + "/*");
+                    } catch (ExecutionException ee) {
+                        this.burp.call.printError("Scan task error: " + String.valueOf(ee.getCause()));
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
                         break;
                     }
-                    whileSiz += 1;
-
                 }
 
 
@@ -157,6 +163,10 @@ public class vulscan {
         HashMap<String, String> headMap = new HashMap<String, String>();
         for (String i : headers){
             int indexLocation = i.indexOf(":");
+            if (indexLocation < 0) {
+                // 不含冒号的非法头行(如畸形请求),跳过避免 substring(0, -1) 崩溃
+                continue;
+            }
             String key = i.substring(0,indexLocation).trim();
             String value = i.substring(indexLocation + 1).trim();
             headMap.put(key,value);
