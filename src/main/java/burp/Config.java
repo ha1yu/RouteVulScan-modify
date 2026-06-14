@@ -7,6 +7,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -125,53 +127,53 @@ public class Config {
 
         // Yaml File Path 文本展示框
         JLabel yaml_Path = new JLabel("Yaml File Path:");
-        yaml_Path.setBounds(5, 20, 100, 50);
+        yaml_Path.setBounds(5, 50, 100, 50);
 
         // 展示路径
         txtfield1 = new JTextField();   //创建文本框
         txtfield1.setText(yaml_path);    //设置文本框的内容
         txtfield1.setEditable(false);
-        txtfield1.setBounds(110, 35, 720, 20);
+        txtfield1.setBounds(110, 65, 720, 20);
 
 
         // Online Update按钮
         JButton Online_Update_button = new JButton("Update");
         Online_Update_button.setMargin(new Insets(1, 6, 1, 6));
-        Online_Update_button.setBounds(840, 34, 100, 23);
+        Online_Update_button.setBounds(840, 64, 100, 23);
         Online_Update_Yaml(Online_Update_button);
 
         // load 按钮
         JButton load_button = new JButton("Load Yaml");
         load_button.setMargin(new Insets(1, 6, 1, 6));
-        load_button.setBounds(950, 34, 110, 23);
+        load_button.setBounds(950, 64, 110, 23);
         load_button_Yaml(load_button);
 
         // 线程选择
         JLabel thread_num = new JLabel("Thread Numbers:");
-        thread_num.setBounds(1070, 20, 130, 50);
+        thread_num.setBounds(1070, 50, 130, 50);
         SpinnerNumberModel model1 = new SpinnerNumberModel(10, 1, 500, 3);
         this.spinner1 = new JSpinner(model1);
         ((JSpinner.DefaultEditor) this.spinner1.getEditor()).getTextField().setEditable(false);
 
-        this.spinner1.setBounds(1210, 34, 100, 23);
+        this.spinner1.setBounds(1210, 64, 100, 23);
 
 
 
 
         // add按钮
         JButton add_button = new JButton("Add");
-        add_button.setBounds(5, 75, 70, 23);
+        add_button.setBounds(5, 110, 70, 23);
         Add_Button_Yaml(add_button, yaml_path);
 
         // Edit按钮
         JButton edit_button = new JButton("Edit");
-        edit_button.setBounds(5, 100, 70, 23);
+        edit_button.setBounds(5, 135, 70, 23);
 //        Edit_Button_Yaml(edit_button,yaml_path,view_class,log);
         Edit_Button_Yaml(edit_button, yaml_path);
 
         // Del按钮
         JButton remove_button = new JButton("Del");
-        remove_button.setBounds(5, 125, 70, 23);
+        remove_button.setBounds(5, 160, 70, 23);
         Del_Button_Yaml(remove_button, yaml_path);
 
 
@@ -179,7 +181,7 @@ public class Config {
         // 展示界面容器
         ruleTabbedPane = new JTabbedPane();
         this.ruleSwitch = new TabTitleEditListener(ruleTabbedPane, this.burp);
-        ruleTabbedPane.setBounds(80, 60, 1230, 740);
+        ruleTabbedPane.setBounds(80, 95, 1230, 740);
         Bfunc.show_yaml(burp);
         ruleTabbedPane.addMouseListener(ruleSwitch);
 
@@ -226,13 +228,41 @@ public class Config {
 
         // Filter_Host 文本展示框
         JLabel Filter_Host = new JLabel("Filter_Host:");
-        Filter_Host.setBounds(510, -10, 100, 50);
+        Filter_Host.setBounds(20, 20, 100, 50);
 
-        // Host 输入框
+        // 从 yaml 恢复上次保存的 host 过滤值(旧文件无此 key 时兜底默认值,向后兼容)
+        Map<String, Object> persisted = YamlUtil.readYaml(BurpExtender.Yaml_Path);
+        String filterHostDefault = persisted != null && persisted.get("filter_host") != null ? String.valueOf(persisted.get("filter_host")) : "*";
+        String blackHostDefault = persisted != null && persisted.get("black_host") != null ? String.valueOf(persisted.get("black_host")) : "";
+
+        // Host 输入框(白名单)
         JTextField Host_txtfield = new JTextField();   //创建文本框
-        Host_txtfield.setText("*");    //设置文本框的内容
-        Host_txtfield.setBounds(620, 5, 660, 20);
+        Host_txtfield.setText(filterHostDefault);    //设置文本框的内容
+        Host_txtfield.setBounds(120, 35, 500, 20);
         burp.Host_txtfield = Host_txtfield;
+        // 失焦写回 yaml(对齐 TabTitleEditListener 的 FocusAdapter 风格)
+        Host_txtfield.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                persistHostField("filter_host", Host_txtfield.getText());
+            }
+        });
+
+        // Black_Host 文本展示框(黑名单)
+        JLabel Black_Host = new JLabel("Black_Host:");
+        Black_Host.setBounds(640, 20, 100, 50);
+
+        // Host 黑名单输入框:逗号分隔多条,默认空(不过滤)
+        JTextField Black_Host_txtfield = new JTextField();
+        Black_Host_txtfield.setText(blackHostDefault);
+        Black_Host_txtfield.setBounds(740, 35, 550, 20);
+        burp.Black_Host_txtfield = Black_Host_txtfield;
+        Black_Host_txtfield.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                persistHostField("black_host", Black_Host_txtfield.getText());
+            }
+        });
 
 
 //        添加到主面板
@@ -254,8 +284,27 @@ public class Config {
         one.add(carry_head_button);
         one.add(Filter_Host);
         one.add(Host_txtfield);
+        one.add(Black_Host);
+        one.add(Black_Host_txtfield);
 
 
+    }
+
+    /**
+     * 把单个顶层字段写回 Config_yaml.yaml(全量读-改-写,保留 Load_List/Bypass_List 等其它 key)。
+     * 不能用 updateYaml/removeYaml(它们只保留 Load_List/Bypass_List,会丢其它顶层 key)。
+     */
+    private static void persistHostField(String key, String value) {
+        try {
+            Map<String, Object> data = YamlUtil.readYaml(BurpExtender.Yaml_Path);
+            if (data == null) {
+                data = new HashMap<>();
+            }
+            data.put(key, value);
+            YamlUtil.writeYaml(data, BurpExtender.Yaml_Path);
+        } catch (Exception ex) {
+            // yaml 读写异常不应影响 UI,静默吞掉
+        }
     }
 
     private void carry_head_Button_action(JButton Button_one, Color Primary) {

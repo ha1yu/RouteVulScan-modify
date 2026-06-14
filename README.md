@@ -71,6 +71,14 @@ mvn clean test
 
   * **注意**：因采用部分匹配，输入 `baidu` 也会命中 `evilbaidu.com`、`baidu.com.evil.com` 这类包含子串的 host。若需限定子域，请写成 `.*?\.baidu\.com`。
 
+* Black_Host 输入框，被动扫描的 host 黑名单过滤器，**命中即跳过**（与白名单 Filter_Host 语义相反）。用逗号分隔多个条目，留空表示不屏蔽任何 host。复用白名单的通配符→正则转换规则（`.` → `\.`、`*` → `.*?`）与 `Pattern.find` 部分匹配。
+
+  * **仅对被动扫描生效**（与白名单一致，主动扫描不走此过滤）。
+  * **多条目**：用 `,` 分隔，逐条匹配，命中任一条目即跳过本次扫描。例如 `evil.com,*.spam.net,10.0.0.*` 会屏蔽 `evil.com` 及其子域、`*.spam.net` 下的所有 host、以及 `10.0.0.0/24` 网段。
+  * **空值不过滤**：留空时行为与未启用黑名单完全一致，不影响任何流量。
+
+  * **持久化**：`Filter_Host` 和 `Black_Host` 的值会在输入框**失焦时自动写回** `Config_yaml.yaml`（顶层 `filter_host` / `black_host` 字段），重启 Burp 或重新加载插件后自动恢复。开关按钮（Start/Head/DomainScan/Bypass）和线程数**不持久化**，重启后回到默认值。
+
 * VulDisplay界面右键可删除选中的行，或全部删除
 
 * 右键请求可选择将当前请求发送到插件进行主动扫描，插件会将站点地图中，与当前请求使用一样host的历史路径全部进行扫描
@@ -106,10 +114,11 @@ mvn clean test
 | 3   | `DomainScan_On` 按钮 | **域名扫描**，开启后把 host 的子域/主域也当路径层；点击变 `DomainScan_Off` + 绿底 |
 | 4   | `Bypass_On` 按钮 | **Bypass 开关**，规则首轮没命中时用 `Bypass_List` 字符（如 `.`、`;`、`..;/`、`%2f`）插入路径重试 |
 | 5   | `Filter_Host` 输入框 | **Host 过滤**，支持 `*` 通配，如 `*.baidu.com`，只扫匹配 host 的流量（详见上文） |
-| 6   | `Yaml File Path` 只读文本框 | 显示当前规则文件路径（默认 `Burp目录/Config_yaml.yaml`），不可编辑 |
-| 7   | `Update` 按钮 | **在线更新规则**，从 `raw.githubusercontent.com/F6JO/RouteVulScan/main/Config_yaml.yaml` 拉取并追加 |
-| 8   | `Load Yaml` 按钮 | **重新加载本地规则文件**（手动改 yaml 后点一下生效） |
-| 9   | `Thread Numbers` 数字选择器 | **扫描线程数**，范围 1–500，默认 10，步进 3 |
+| 6   | `Black_Host` 输入框 | **Host 黑名单**，逗号分隔多条，如 `evil.com,*.spam.net`，命中任一即跳过被动扫描（详见上文） |
+| 7   | `Yaml File Path` 只读文本框 | 显示当前规则文件路径（默认 `Burp目录/Config_yaml.yaml`），不可编辑 |
+| 8   | `Update` 按钮 | **在线更新规则**，从 `raw.githubusercontent.com/ha1yu/RouteVulScan-modify/main/Config_yaml.yaml` 拉取并追加 |
+| 9   | `Load Yaml` 按钮 | **重新加载本地规则文件**（手动改 yaml 后点一下生效） |
+| 10  | `Thread Numbers` 数字选择器 | **扫描线程数**，范围 1–500，默认 10，步进 3 |
 
 > 此外还有左侧的 `Add` / `Edit` / `Del` 三个规则编辑按钮，以及中间按规则 `type` 字段自动分组的 `ruleTabbedPane`（右键标题可删除分类，双击可重命名，末尾 `...` Tab 双击可新建分类）。
 
@@ -141,4 +150,12 @@ mvn clean test
 * 2026-06-14 UI 与文档优化:
   - 修复 Config 面板按钮/标签文字被遮挡(JButton 默认 margin 过大),统一压边并重排布局【✓】
   - README 补充 `Filter_Host` 过滤器使用说明(被动扫描专用、通配符转正则、部分匹配语义、用法对照表)【✓】
+* 2026-06-14 新增 host 黑名单过滤器 `Black_Host`:
+  - 逗号分隔多条 host,命中任一即跳过被动扫描;留空不过滤【✓】
+  - 复用 `Filter_Host` 的通配符→正则转换规则与 `Pattern.find` 部分匹配,对称实现【✓】
+* 2026-06-14 host 过滤持久化与配置增强:
+  - `Filter_Host`/`Black_Host` 失焦自动写回 `Config_yaml.yaml`,重启恢复【✓】
+  - Config 面板布局重排为三行结构(开关行 / 过滤器行 / 文件线程行)【✓】
+  - `Bypass_List` 默认字典 2 → 9 条,覆盖路径穿越/Spring Security/编码混淆等场景【✓】
+  - 在线更新地址切换到 fork 仓库 `ha1yu/RouteVulScan-modify`(保留原作者署名)【✓】
 

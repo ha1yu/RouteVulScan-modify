@@ -45,9 +45,11 @@ public class BurpExtender implements IBurpExtender, IScannerCheck, IContextMenuF
     public static String VERSION = "1.6.0";
     public static String Download_Yaml_host = "raw.githubusercontent.com";
     public static int Download_Yaml_port = 443;
-    public static String Download_Yaml_file = "/F6JO/RouteVulScan/main/Config_yaml.yaml";
+    public static String Download_Yaml_file = "/ha1yu/RouteVulScan-modify/main/Config_yaml.yaml";
     public Map<String, View> views;
     public JTextField Host_txtfield;
+    // Host 黑名单输入框:逗号分隔多条,命中任一即跳过被动扫描(空则不过滤)。对称于白名单 Host_txtfield。
+    public JTextField Black_Host_txtfield;
 
 
 
@@ -85,6 +87,19 @@ public class BurpExtender implements IBurpExtender, IScannerCheck, IContextMenuF
             Pattern pattern = Pattern.compile(re);
             Matcher matcher = pattern.matcher(baseRequestResponse.getHttpService().getHost());
             if (matcher.find()) {
+                // 黑名单:命中任一条目则跳过本次扫描(空输入不过滤)。复用白名单的通配符->正则规则。
+                String blackText = Black_Host_txtfield.getText().trim();
+                if (!blackText.isEmpty()) {
+                    String currentHost = baseRequestResponse.getHttpService().getHost();
+                    for (String entry : blackText.split(",")) {
+                        String e = entry.trim();
+                        if (e.isEmpty()) continue;
+                        String reBlack = e.replace(".", "\\.").replace("*", ".*?");
+                        if (Pattern.compile(reBlack).matcher(currentHost).find()) {
+                            return IssueList;
+                        }
+                    }
+                }
                 IHttpService Http_Service = baseRequestResponse.getHttpService();
                 String Root_Url = Http_Service.getProtocol() + "://" + Http_Service.getHost() + ":" + String.valueOf(Http_Service.getPort());
                 try {
