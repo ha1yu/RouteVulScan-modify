@@ -4,14 +4,20 @@
 
 ## [1.6.3] - 2026-06-14
 ### 新增(Added)
-- **host 黑名单过滤器 `Black_Host`**:Config 面板新增黑名单输入框,逗号分隔多条 host(如 `evil.com,*.spam.net,10.0.0.*`),命中任一即跳过本次被动扫描;留空不过滤。复用白名单 `Filter_Host` 的通配符→正则转换规则(`.`→`\.`,`*`→`.*?`)与 `Pattern.find` 部分匹配,实现对称、行为可预测。作用范围同白名单——仅 `doPassiveScan`,主动扫描不走此过滤。
-- **`Filter_Host` / `Black_Host` 值持久化**:输入框失焦(focusLost)时自动写回 `Config_yaml.yaml` 顶层新增的 `filter_host` / `black_host` 字段;插件启动时读取恢复。新增 `Config.persistHostField` 走「全量读-改-写」(readYaml→put→writeYaml),保留 `Load_List`/`Bypass_List` 等其它顶层 key,避免 `updateYaml`/`removeYaml` 丢弃非规则字段的陷阱。旧 yaml 无此 key 时兜底默认值(`*`/空),向后兼容。
+- **host 黑名单过滤器 `Black_Host`**:Config 面板新增黑名单输入框,逗号分隔多条 host(如 `evil.com,*.spam.net,10.0.0.*`),命中任一即跳过本次被动扫描;留空不过滤。复用白名单 `Filter_Host` 的通配符→正则转换规则(`.`→`\.`,`*`→`.*?`)与 `Pattern.find` 部分匹配,实现对称、行为可预测。作用范围同白名单——仅 `doPassiveScan`,主动扫描不走此过滤。UI 标签中文化为「白名单_Host」「黑名单_Host」。
+- **黑白名单「保存」按钮**:Config 面板第二行末尾新增「保存」按钮,点击后把两个输入框的值写回 `Config_yaml.yaml` 顶层新增的 `filter_host` / `black_host` 字段,并弹「黑白名单已保存」提示。插件启动时读取恢复。新增 `Config.persistHostField` 走「全量读-改-写」(readYaml→put→writeYaml),保留 `Load_List`/`Bypass_List` 等其它顶层 key。旧 yaml 无此 key 时兜底默认值(`*`/空),向后兼容。
 - **`Bypass_List` 字典扩充**:默认绕过字符由 2 条(`%2f`、`%2e`)扩充至 9 条,新增 `..`、`;`、`%2e%2e`、`..;`、`%2e%2e/`、`/..;/`、`%63`,覆盖父目录穿越、Spring Security 路径参数、编码混淆等常见绕过场景。
 
 ### 变更(Changed)
 - **在线更新地址切换 fork**:`Download_Yaml_file` 由 `/F6JO/RouteVulScan/main/Config_yaml.yaml` 改为 `/ha1yu/RouteVulScan-modify/main/Config_yaml.yaml`。作者署名输出(`@From: Code by F6JO`、`@Github`)**保留原值**以尊重原作者。
+- **`Update` 按钮改为「覆盖更新」**:从「合并追加」改为「完全以远程仓库为最高标准覆盖」。`MergerUpdateYamlFunc` 重写,直接用远程 `Load_List`/`Bypass_List`/`filter_host`/`black_host` 覆盖本地并重新分配连续 id。本地自定义规则会被覆盖。
+- **`Update` / `Load Yaml` 同时刷新 host 输入框**:原实现只刷新规则表(`ruleTabbedPane`),不碰黑白名单输入框;现两个操作后均从 yaml 重新读取并回填输入框。
+- **黑白名单持久化触发方式改为「保存按钮」**:取消原「输入框失焦自动保存」机制(易误触发),改为显式点「保存」按钮。
 
 ### 修复(Fixes)
+- **`Update` 报 `ReaderException: special characters are not allowed`**:根因是 `init_Yaml_thread` 用 `IExtensionHelpers.bytesToString` 解码远程响应,默认字符集(非 UTF-8)把 UTF-8 BOM 字节 `EF BB BF` 拆成 3 个 Latin-1 字符 `ï » ¿`,SnakeYAML 2.x 拒绝。改为 `new String(bytes, UTF_8)` 正确解码,并在 `YamlUtil.readStrYaml` 兼容剥离两种 BOM 形态(`\uFEFF` 单字符 + `U+EF/BB/BF` 三字符)。
+- **`Update` 报 `NullPointerException`**:根因是 `YamlUtil.ifmapEqual` 比较规则字段时 `i.get(key).equals(oneMap.get(key))`,任一侧为 null 即 NPE。改为 null 安全比较(`v1==null ? v2!=null : !v1.equals(v2)`)。
+- **`Update` 点击「完全无反应」**:根因是 `init_Yaml_thread.run()` 的 `catch (IOException)` 被注释掉,异常逃逸到子线程顶层被 JVM 静默吞掉。补 `catch (Exception)` 兜底,任何异常都弹可见对话框。
 - **UI 控件文字被遮挡**:`Config` 面板顶部 `Head_On`、`DomainScan_On`、`Bypass_On`、`Update`、`Load Yaml` 按钮及 `Thread Numbers` 标签在中文/高 DPI 环境下文字被裁切。根因是 `JButton` 默认 margin(左右约 14px)从内部挤占文字空间,单纯加宽无效。统一 `setMargin(new Insets(1,6,1,6))` 压掉内边距,并按文字长度重排 `setBounds`(`DomainScan` 150→160 容纳 `DomainScan_Off`,面板总宽 1180→1320)。
 
 ### 文档(Docs)

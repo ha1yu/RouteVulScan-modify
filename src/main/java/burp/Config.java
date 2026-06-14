@@ -7,8 +7,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -227,8 +225,8 @@ public class Config {
 
 
         // Filter_Host 文本展示框
-        JLabel Filter_Host = new JLabel("Filter_Host:");
-        Filter_Host.setBounds(20, 20, 100, 50);
+        JLabel Filter_Host = new JLabel("白名单_Host:");
+        Filter_Host.setBounds(20, 20, 120, 50);
 
         // 从 yaml 恢复上次保存的 host 过滤值(旧文件无此 key 时兜底默认值,向后兼容)
         Map<String, Object> persisted = YamlUtil.readYaml(BurpExtender.Yaml_Path);
@@ -238,29 +236,29 @@ public class Config {
         // Host 输入框(白名单)
         JTextField Host_txtfield = new JTextField();   //创建文本框
         Host_txtfield.setText(filterHostDefault);    //设置文本框的内容
-        Host_txtfield.setBounds(120, 35, 500, 20);
+        Host_txtfield.setBounds(140, 35, 480, 20);
         burp.Host_txtfield = Host_txtfield;
-        // 失焦写回 yaml(对齐 TabTitleEditListener 的 FocusAdapter 风格)
-        Host_txtfield.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusLost(FocusEvent e) {
-                persistHostField("filter_host", Host_txtfield.getText());
-            }
-        });
 
         // Black_Host 文本展示框(黑名单)
-        JLabel Black_Host = new JLabel("Black_Host:");
-        Black_Host.setBounds(640, 20, 100, 50);
+        JLabel Black_Host = new JLabel("黑名单_Host:");
+        Black_Host.setBounds(640, 20, 120, 50);
 
-        // Host 黑名单输入框:逗号分隔多条,默认空(不过滤)
+        // Host 黑名单输入框:逗号分隔多条,默认空(不过滤)。缩短宽度给保存按钮腾位
         JTextField Black_Host_txtfield = new JTextField();
         Black_Host_txtfield.setText(blackHostDefault);
-        Black_Host_txtfield.setBounds(740, 35, 550, 20);
+        Black_Host_txtfield.setBounds(760, 35, 430, 20);
         burp.Black_Host_txtfield = Black_Host_txtfield;
-        Black_Host_txtfield.addFocusListener(new FocusAdapter() {
+
+        // 保存按钮:点击时把黑白名单值写回 yaml(替代失焦保存,避免误触发)
+        JButton save_host_button = new JButton("保存");
+        save_host_button.setMargin(new Insets(1, 6, 1, 6));
+        save_host_button.setBounds(1200, 34, 80, 23);
+        save_host_button.addActionListener(new ActionListener() {
             @Override
-            public void focusLost(FocusEvent e) {
+            public void actionPerformed(ActionEvent e) {
+                persistHostField("filter_host", Host_txtfield.getText());
                 persistHostField("black_host", Black_Host_txtfield.getText());
+                JOptionPane.showMessageDialog(one, "黑白名单已保存", "提示", 1);
             }
         });
 
@@ -286,6 +284,7 @@ public class Config {
         one.add(Host_txtfield);
         one.add(Black_Host);
         one.add(Black_Host_txtfield);
+        one.add(save_host_button);
 
 
     }
@@ -736,6 +735,14 @@ public class Config {
             @Override
             public void actionPerformed(ActionEvent e) {
                 Bfunc.show_yaml(burp);
+                // 同时刷新 host 过滤输入框(从 yaml 重新读取,与规则表行为一致)
+                Map<String, Object> persisted = YamlUtil.readYaml(BurpExtender.Yaml_Path);
+                if (persisted != null) {
+                    Object filterHost = persisted.get("filter_host");
+                    Object blackHost = persisted.get("black_host");
+                    burp.Host_txtfield.setText(filterHost != null ? String.valueOf(filterHost) : "*");
+                    burp.Black_Host_txtfield.setText(blackHost != null ? String.valueOf(blackHost) : "");
+                }
             }
         });
 

@@ -77,7 +77,7 @@ mvn clean test
   * **多条目**：用 `,` 分隔，逐条匹配，命中任一条目即跳过本次扫描。例如 `evil.com,*.spam.net,10.0.0.*` 会屏蔽 `evil.com` 及其子域、`*.spam.net` 下的所有 host、以及 `10.0.0.0/24` 网段。
   * **空值不过滤**：留空时行为与未启用黑名单完全一致，不影响任何流量。
 
-  * **持久化**：`Filter_Host` 和 `Black_Host` 的值会在输入框**失焦时自动写回** `Config_yaml.yaml`（顶层 `filter_host` / `black_host` 字段），重启 Burp 或重新加载插件后自动恢复。开关按钮（Start/Head/DomainScan/Bypass）和线程数**不持久化**，重启后回到默认值。
+  * **持久化**：`Filter_Host` 和 `Black_Host` 的值在点击 Config 面板第二行末尾的**「保存」按钮**时写回 `Config_yaml.yaml`（顶层 `filter_host` / `black_host` 字段），重启 Burp 或重新加载插件后自动恢复。**不会失焦自动保存**——必须显式点「保存」按钮。开关按钮（Start/Head/DomainScan/Bypass）和线程数**不持久化**，重启后回到默认值。
 
 * VulDisplay界面右键可删除选中的行，或全部删除
 
@@ -105,7 +105,7 @@ mvn clean test
 
 ### Config 面板控件清单
 
-配置（Config）Tab 自上而下、从左到右共 9 组可交互控件：
+配置（Config）Tab 自上而下、从左到右共 11 组可交互控件：
 
 | #   | 控件 | 作用 |
 |-----|------|------|
@@ -113,11 +113,13 @@ mvn clean test
 | 2   | `Head_On` 按钮 | **携带原始请求头**扫描（鉴权场景必开，会复用 Cookie/Authorization）；点击变 `Head_Off` + 绿底 |
 | 3   | `DomainScan_On` 按钮 | **域名扫描**，开启后把 host 的子域/主域也当路径层；点击变 `DomainScan_Off` + 绿底 |
 | 4   | `Bypass_On` 按钮 | **Bypass 开关**，规则首轮没命中时用 `Bypass_List` 字符（如 `.`、`;`、`..;/`、`%2f`）插入路径重试 |
-| 5   | `Filter_Host` 输入框 | **Host 过滤**，支持 `*` 通配，如 `*.baidu.com`，只扫匹配 host 的流量（详见上文） |
-| 6   | `Black_Host` 输入框 | **Host 黑名单**，逗号分隔多条，如 `evil.com,*.spam.net`，命中任一即跳过被动扫描（详见上文） |
-| 7   | `Yaml File Path` 只读文本框 | 显示当前规则文件路径（默认 `Burp目录/Config_yaml.yaml`），不可编辑 |
-| 8   | `Update` 按钮 | **在线更新规则**，从 `raw.githubusercontent.com/ha1yu/RouteVulScan-modify/main/Config_yaml.yaml` 拉取并追加 |
-| 9   | `Load Yaml` 按钮 | **重新加载本地规则文件**（手动改 yaml 后点一下生效） |
+| 5   | `白名单_Host` 输入框 | **Host 白名单**，支持 `*` 通配，如 `*.baidu.com`，只扫匹配 host 的流量（详见上文） |
+| 6   | `黑名单_Host` 输入框 | **Host 黑名单**，逗号分隔多条，如 `evil.com,*.spam.net`，命中任一即跳过被动扫描（详见上文） |
+| 7   | `保存` 按钮 | **保存黑白名单**到 `Config_yaml.yaml`（需显式点击，不会失焦自动保存） |
+| 8   | `Yaml File Path` 只读文本框 | 显示当前规则文件路径（默认 `Burp目录/Config_yaml.yaml`），不可编辑 |
+| 9   | `Update` 按钮 | **覆盖更新规则**，从 `raw.githubusercontent.com/ha1yu/RouteVulScan-modify/main/Config_yaml.yaml` 拉取并**完全覆盖**本地（含规则/Bypass_List/黑白名单） |
+| 10  | `Load Yaml` 按钮 | **重新加载本地规则文件**（手动改 yaml 后点一下生效；同时刷新黑白名单输入框） |
+| 11  | `Thread Numbers` 数字选择器 | **扫描线程数**，范围 1–500，默认 10，步进 3 |
 | 10  | `Thread Numbers` 数字选择器 | **扫描线程数**，范围 1–500，默认 10，步进 3 |
 
 > 此外还有左侧的 `Add` / `Edit` / `Del` 三个规则编辑按钮，以及中间按规则 `type` 字段自动分组的 `ruleTabbedPane`（右键标题可删除分类，双击可重命名，末尾 `...` Tab 双击可新建分类）。

@@ -99,57 +99,56 @@ public class YamlUtil {
     public static Map<String, Object> readStrYaml(String str){
         Map<String, Object> data = null;
         Yaml yaml = new Yaml(SAFE_CONSTRUCTOR);
+        // 剥掉开头的 BOM。两种形态都要处理:
+        //   1) 标准 \uFEFF(UTF-8 正确解码后的单字符 BOM)
+        //   2) U+00EF U+00BB U+00BF(Latin-1 误解码后的三字符 BOM,即 bytesToString 默认字符集导致)
+        // SnakeYAML 2.x 会把这些当作非法 special characters 拒绝。
+        if (str != null) {
+            while (!str.isEmpty()) {
+                char c0 = str.charAt(0);
+                if (c0 == '\uFEFF') {
+                    str = str.substring(1);
+                } else if (str.length() >= 3 && c0 == '\u00EF' && str.charAt(1) == '\u00BB' && str.charAt(2) == '\u00BF') {
+                    str = str.substring(3);
+                } else {
+                    break;
+                }
+            }
+        }
         data = yaml.load(str);
         return data;
     }
 
 
     public static void MergerUpdateYamlFunc(Map<String, Object> newYaml){
-        // 单次读取旧配置,在内存中合并,最后一次写回(避免循环内反复 readYaml 导致的 O(n²) IO)
-        Map<String, Object> oldYaml = YamlUtil.readYaml(BurpExtender.Yaml_Path);
-        List<Map<String, Object>> oldYamlList = (List<Map<String, Object>>)oldYaml.get("Load_List");
-        if (oldYamlList == null) {
-            oldYamlList = new ArrayList<Map<String, Object>>();
-        }
-        List<Map<String, Object>> newYamlList = (List<Map<String, Object>>)newYaml.get("Load_List");
-
-        // 计算当前最大 id,新增规则递增分配
-        int maxId = 0;
-        for (Map<String, Object> zidian : oldYamlList) {
-            int cur = YamlUtil.safeParseId(zidian.get("id"));
-            if (cur > maxId) {
-                maxId = cur;
-            }
-        }
-        for (Map<String, Object> i : newYamlList){
-            if (!YamlUtil.inYamlList(oldYamlList,i)){
-                maxId += 1;
-                i.remove("id");
-                i.put("id",maxId);
-                oldYamlList.add(i);
-            }
-        }
-
-        // 合并 Bypass_List
-        List<String> oldBypassList = (List<String>)oldYaml.get("Bypass_List");
-        List<String> newBypassList = (List<String>)newYaml.get("Bypass_List");
-        if (oldBypassList == null){
-            oldBypassList = (newBypassList != null) ? new ArrayList<String>(newBypassList) : new ArrayList<String>();
-        }else if (newBypassList != null){
-            for (String i : newBypassList){
-                if (!oldBypassList.contains(i)){
-                    oldBypassList.add(i);
-                }
-            }
-        }
-
+        // 覆盖模式:完全以远程仓库为最高标准,本地文件 = 远程文件。
+        // 不再做合并追加(旧逻辑会把本地自定义规则和远程规则去重合并,
+        // 导致远程删改的规则在本地仍残留,且远程新增字段如 filter_host/black_host
+        // 在旧本地文件缺失时无法补齐)。
         Map<String, Object> save = new HashMap<String, Object>();
-        save.put("Load_List", oldYamlList);
-        save.put("Bypass_List", oldBypassList);
-        YamlUtil.writeYaml(save,BurpExtender.Yaml_Path);
 
+        // Load_List:用远程规则覆盖,重新分配连续 id(1,2,3...)
+        List<Map<String, Object>> newYamlList = (List<Map<String, Object>>)newYaml.get("Load_List");
+        if (newYamlList == null) {
+            newYamlList = new ArrayList<Map<String, Object>>();
+        }
+        int id = 0;
+        for (Map<String, Object> rule : newYamlList) {
+            id += 1;
+            rule.put("id", id);
+        }
+        save.put("Load_List", newYamlList);
 
+        // Bypass_List / filter_host / black_host:全部以远程为准
+        save.put("Bypass_List", newYaml.get("Bypass_List"));
+        if (newYaml.get("filter_host") != null) {
+            save.put("filter_host", newYaml.get("filter_host"));
+        }
+        if (newYaml.get("black_host") != null) {
+            save.put("black_host", newYaml.get("black_host"));
+        }
 
+        YamlUtil.writeYaml(save, BurpExtender.Yaml_Path);
     }
 
     public static boolean inYamlList(List<Map<String, Object>> mapList,Map<String, Object> oneMap){
@@ -166,7 +165,10 @@ public class YamlUtil {
         boolean mapEqual = true;
         for (String key : i.keySet()){
             if (!key.equals("loaded") && !key.equals("id") && !key.equals("type")){
-                if (!i.get(key).equals(oneMap.get(key))){
+                // null 安全比较:任一侧为 null 时,只有两侧都 null 才算相等,避免 NPE
+                Object v1 = i.get(key);
+                Object v2 = oneMap.get(key);
+                if (v1 == null ? v2 != null : !v1.equals(v2)) {
                     mapEqual = false;
                     break;
                 }
