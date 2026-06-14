@@ -36,6 +36,23 @@ RouteVulScan是使用java语言基于burpsuite api开发的可以递归检测脆
 
 ## 使用
 
+### 构建(开发者)
+
+项目使用 Maven 构建,要求 JDK 21+(对齐 Burp 自 2024.2.1 起的最低内置 JRE)。
+
+```bash
+mvn clean package
+# 产物:target/RouteVulScan-1.6.0.jar
+```
+
+运行单元测试:
+
+```bash
+mvn clean test
+```
+
+### 装载插件
+
 装载插件：``` Extender - Extensions - Add - Select File - Next ```
 
 初次装载插件会在burpsuite当前目录下生成Config_yaml.yaml配置文件，用来储存匹配规则，该文件默认在当前burp目录下。
@@ -110,6 +127,12 @@ RouteVulScan是使用java语言基于burpsuite api开发的可以递归检测脆
 * 2024-03-07 展示面板加入排序，优化bypass功能【✓】
 * 修改UI适配
 * 2026-06-13 修复多项缺陷、解除 JDK 内部 API 耦合并移除 rt.jar、构建现代化(Gradle 9/JDK 21)、新增单元测试【✓】详见 [CHANGELOG.md](./CHANGELOG.md)
+* 2026-06-14 安全加固与健壮性提升:
+  - SnakeYAML 升级至 2.2 并启用 SafeConstructor(缓解 CVE-2022-1471,远程拉取的规则不再可触发任意类构造)【✓】
+  - id 类型统一(新增 `safeParseId`,消除 ClassCastException/NumberFormatException)、模板标记数组越界守卫、状态码解析对非法值容错(`any`/`*` 匹配全部状态码)【✓】
+  - `vulscan` 重型构造器拆分为 `scan()`,可读性与可测性提升【✓】
+  - Java 字节码目标 1.8 → 21(对齐 Burp 自 2024.2.1 起的最低内置 JRE),消除全部 "源值/目标值 8 已过时" 编译警告【✓】
+  - 单元测试扩充至 61 例(全绿)【✓】详见 [CHANGELOG.md](./CHANGELOG.md)
 
 ## 开心值
 

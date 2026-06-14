@@ -19,6 +19,7 @@
 - `maven-shade-plugin`(替代 Shadow)打 fat jar,`maven-surefire-plugin 3.5.2` 运行 JUnit 5 测试。
 - 构建命令:`mvn clean package` → `target/RouteVulScan-1.6.0.jar`。
 - 清理 Gradle 残留目录:`build/`、`.gradle/`、`lib/`(rt.jar 已于 1.6.0 移除);`.gitignore` 新增 `lib`。
+- **Java 字节码目标 1.8 → 21**:Burp 自 2024.2.1 起最低内置 JRE 即为 Java 21(最新版已捆绑 Java 26),1.8 兼容理由已失效。升级后字节码主版本号 = 65,消除全部 "源值/目标值 8 已过时" 编译警告(WARNING 13 → 7)。
 
 ### 测试(Tests)
 - 单元测试 49 → 61 例(全绿):新增 `StatusCodeProcTest`(`any`/`*`/`null`/乱码)、`ProcTemplateLanguagTest`(`{{request}}`/`{{request.head}}` 越界守卫)、`SafeParseIdTest`(Integer/String/空白/非数字/null)。
