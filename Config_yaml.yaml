@@ -2,7 +2,7 @@
 # filter_host: 白名单,逗号分隔;默认 * 放行全部,如 *.test.com 只扫该域
 # black_host:  黑名单,逗号分隔多个,命中即跳过;默认空,如 evil.com,*.spam.net
 filter_host: '*'
-black_host: ''
+black_host: '*.baidu.com,*.qianxin.com,fofa.info'
 # Bypass_List: ['/', '.', '..', ';', '..', '..;', '../', '/..;/', 'c']
 Bypass_List: ['%2f', '%2e', '..', ';', '%2e%2e', '..;', '%2e%2e/', '/..;/', '%63']
 Load_List:
