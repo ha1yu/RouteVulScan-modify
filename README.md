@@ -99,17 +99,17 @@ mvn clean test
 
 配置（Config）Tab 自上而下、从左到右共 9 组可交互控件：
 
-| #   | 控件 | 初始文本/值 | 作用 | 对应字段 | 代码位置 |
-|-----|------|-----------|------|---------|---------|
-| 1   | `Start` 按钮 | `Start` | **插件总开关**，关闭时被动扫描直接返回空；点击后变 `Stop` + 绿底 | `burp.on_off` | `Config.java:191` |
-| 2   | `Head_On` 按钮 | `Head_On` | **携带原始请求头**扫描（鉴权场景必开，会复用 Cookie/Authorization）；点击变 `Head_Off` + 绿底 | `burp.Carry_head` | `Config.java:202` |
-| 3   | `DomainScan_On` 按钮 | `DomainScan_On` | **域名扫描**，开启后把 host 的子域/主域也当路径层；点击变 `DomainScan_Off` + 绿底 | `burp.DomainScan` | `Config.java:208` |
-| 4   | `Bypass_On` 按钮 | `Bypass_On` | **Bypass 开关**，规则首轮没命中时用 `Bypass_List` 字符（如 `.`、`;`、`..;/`、`%2f`）插入路径重试 | `burp.Bypass` | `Config.java:215` |
-| 5   | `Filter_Host` 输入框 | `*` | **Host 过滤**，支持 `*` 通配，如 `*.baidu.com`，只扫匹配 host 的流量（详见上文） | `burp.Host_txtfield` | `Config.java:226` |
-| 6   | `Yaml File Path` 只读文本框 | 规则文件路径 | 显示当前规则文件路径（默认 `Burp目录/Config_yaml.yaml`），不可编辑 | — | `Config.java:127,131` |
-| 7   | `Update` 按钮 | — | **在线更新规则**，从 `raw.githubusercontent.com/F6JO/RouteVulScan/main/Config_yaml.yaml` 拉取并追加 | — | `Config.java:138` |
-| 8   | `Load Yaml` 按钮 | — | **重新加载本地规则文件**（手动改 yaml 后点一下生效） | — | `Config.java:143` |
-| 9   | `Thread Numbers` 数字选择器 | `10` | **扫描线程数**，范围 1–500，默认 10，步进 3 | `Config.spinner1` | `Config.java:148,150` |
+| #   | 控件 | 初始文本/值 | 作用 |
+|-----|------|-----------|------|
+| 1   | `Start` 按钮 | `Start` | **插件总开关**，关闭时被动扫描直接返回空；点击后变 `Stop` + 绿底 |
+| 2   | `Head_On` 按钮 | `Head_On` | **携带原始请求头**扫描（鉴权场景必开，会复用 Cookie/Authorization）；点击变 `Head_Off` + 绿底 |
+| 3   | `DomainScan_On` 按钮 | `DomainScan_On` | **域名扫描**，开启后把 host 的子域/主域也当路径层；点击变 `DomainScan_Off` + 绿底 |
+| 4   | `Bypass_On` 按钮 | `Bypass_On` | **Bypass 开关**，规则首轮没命中时用 `Bypass_List` 字符（如 `.`、`;`、`..;/`、`%2f`）插入路径重试 |
+| 5   | `Filter_Host` 输入框 | `*` | **Host 过滤**，支持 `*` 通配，如 `*.baidu.com`，只扫匹配 host 的流量（详见上文） |
+| 6   | `Yaml File Path` 只读文本框 | 规则文件路径 | 显示当前规则文件路径（默认 `Burp目录/Config_yaml.yaml`），不可编辑 |
+| 7   | `Update` 按钮 | — | **在线更新规则**，从 `raw.githubusercontent.com/F6JO/RouteVulScan/main/Config_yaml.yaml` 拉取并追加 |
+| 8   | `Load Yaml` 按钮 | — | **重新加载本地规则文件**（手动改 yaml 后点一下生效） |
+| 9   | `Thread Numbers` 数字选择器 | `10` | **扫描线程数**，范围 1–500，默认 10，步进 3 |
 
 > 此外还有左侧的 `Add` / `Edit` / `Del` 三个规则编辑按钮，以及中间按规则 `type` 字段自动分组的 `ruleTabbedPane`（右键标题可删除分类，双击可重命名，末尾 `...` Tab 双击可新建分类）。
 
