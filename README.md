@@ -22,7 +22,7 @@ RouteVulScan是使用java语言基于burpsuite api开发的可以递归检测脆
 
 ```bash
 mvn clean package
-# 产物:target/RouteVulScan-1.6.0.jar
+# 产物:target/RouteVulScan-1.6.3.jar
 ```
 
 运行单元测试:

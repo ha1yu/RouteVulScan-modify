@@ -42,7 +42,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck, IContextMenuF
     public boolean DomainScan = false;
     public static String Download_Yaml_protocol = "https";
 
-    public static String VERSION = "1.6.0";
+    public static String VERSION = "1.6.3";
     public static String Download_Yaml_host = "raw.githubusercontent.com";
     public static int Download_Yaml_port = 443;
     public static String Download_Yaml_file = "/ha1yu/RouteVulScan-modify/main/Config_yaml.yaml";

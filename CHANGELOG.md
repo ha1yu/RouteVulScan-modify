@@ -2,7 +2,7 @@
 
 本文件记录 RouteVulScan 的重要变更,格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
-## [Unreleased]
+## [1.6.3] - 2026-06-14
 ### 新增(Added)
 - **host 黑名单过滤器 `Black_Host`**:Config 面板新增黑名单输入框,逗号分隔多条 host(如 `evil.com,*.spam.net,10.0.0.*`),命中任一即跳过本次被动扫描;留空不过滤。复用白名单 `Filter_Host` 的通配符→正则转换规则(`.`→`\.`,`*`→`.*?`)与 `Pattern.find` 部分匹配,实现对称、行为可预测。作用范围同白名单——仅 `doPassiveScan`,主动扫描不走此过滤。
 - **`Filter_Host` / `Black_Host` 值持久化**:输入框失焦(focusLost)时自动写回 `Config_yaml.yaml` 顶层新增的 `filter_host` / `black_host` 字段;插件启动时读取恢复。新增 `Config.persistHostField` 走「全量读-改-写」(readYaml→put→writeYaml),保留 `Load_List`/`Bypass_List` 等其它顶层 key,避免 `updateYaml`/`removeYaml` 丢弃非规则字段的陷阱。旧 yaml 无此 key 时兜底默认值(`*`/空),向后兼容。

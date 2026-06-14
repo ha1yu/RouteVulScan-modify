@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>RouteVulScan</artifactId>
-    <version>1.6.0</version>
+    <version>1.6.3</version>
     <packaging>jar</packaging>
 
     <name>RouteVulScan</name>
@@ -45,7 +45,7 @@
     </dependencies>
 
     <build>
-        <!-- 产物名:RouteVulScan-1.6.0.jar -->
+        <!-- 产物名:RouteVulScan-1.6.3.jar -->
         <finalName>RouteVulScan-${project.version}</finalName>
         <plugins>
             <plugin>
