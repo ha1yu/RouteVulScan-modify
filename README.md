@@ -1,7 +1,7 @@
 # RouteVulScan-modify
 Burpsuite - Route Vulnerable scanning  递归式被动检测脆弱路径的burp插件
 
-***
+修改自 https://github.com/F6JO/RouteVulScan
 
 ## 介绍
 
