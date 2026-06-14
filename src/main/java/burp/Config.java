@@ -435,7 +435,7 @@ public class Config {
                         String info = Info_text.getText();
                         String state = State_text.getText();
                         Map<String, Object> add_map = new HashMap<String, Object>();
-                        add_map.put("id", Integer.parseInt(view_class.Choice.id));
+                        add_map.put("id", YamlUtil.safeParseId(view_class.Choice.id));
                         add_map.put("type", type);
                         add_map.put("loaded", view_class.Choice.loaded);
                         add_map.put("name", name);
@@ -625,8 +625,9 @@ public class Config {
                         Map<String, Object> Yaml_Map = YamlUtil.readYaml(yaml_path1);
                         List<Map<String, Object>> List1 = (List<Map<String, Object>>) Yaml_Map.get("Load_List");
                         for (Map<String, Object> zidian : List1) {
-                            if ((int) zidian.get("id") > id) {
-                                id = (int) zidian.get("id");
+                            int cur = YamlUtil.safeParseId(zidian.get("id"));
+                            if (cur > id) {
+                                id = cur;
                             }
                         }
                         id += 1;

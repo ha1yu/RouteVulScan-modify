@@ -138,4 +138,18 @@ class ProcTemplateLanguagTest {
         String expected = "re/" + Pattern.quote("test.value");
         assertEquals(expected, Bfunc.ProcTemplateLanguag("re/{{request.head.cookie}}", emptyRequestResponse(), vul, true));
     }
+
+    @Test
+    void templateWithoutSubkeyReturnedAsIs() throws Exception {
+        // {{request}} 缺少子键,曾因访问 parts[1] 越界抛 ArrayIndexOutOfBoundsException,现原样返回
+        vulscan vul = newVulscanWithHelpers(buildHelpers(new HashMap<>(), null));
+        assertEquals("{{request}}", Bfunc.ProcTemplateLanguag("{{request}}", emptyRequestResponse(), vul, false));
+    }
+
+    @Test
+    void templateHeadWithoutHeaderNameReturnedAsIs() throws Exception {
+        // {{request.head}} 缺少 header 名,无法取值,原样返回
+        vulscan vul = newVulscanWithHelpers(buildHelpers(new HashMap<>(), null));
+        assertEquals("/{{request.head}}", Bfunc.ProcTemplateLanguag("/{{request.head}}", emptyRequestResponse(), vul, false));
+    }
 }

@@ -49,4 +49,34 @@ class StatusCodeProcTest {
         assertTrue(r.contains(201));
         assertTrue(r.contains(302));
     }
+
+    @Test
+    void anyMatchesAllStatusCodes() {
+        Collection<Integer> r = Bfunc.StatusCodeProc("any");
+        assertEquals(500, r.size());
+        assertTrue(r.contains(200));
+        assertTrue(r.contains(404));
+        assertTrue(r.contains(500));
+        assertTrue(r.contains(599));
+    }
+
+    @Test
+    void starMatchesAllStatusCodes() {
+        Collection<Integer> r = Bfunc.StatusCodeProc("*");
+        assertEquals(500, r.size());
+        assertTrue(r.contains(100));
+        assertTrue(r.contains(599));
+    }
+
+    @Test
+    void illegalStringReturnsEmpty() {
+        // 非数字、非 any/* 的乱码:静默返回空集合,不抛异常
+        Collection<Integer> r = Bfunc.StatusCodeProc("xyz");
+        assertTrue(r.isEmpty());
+    }
+
+    @Test
+    void nullReturnsEmpty() {
+        assertTrue(Bfunc.StatusCodeProc(null).isEmpty());
+    }
 }

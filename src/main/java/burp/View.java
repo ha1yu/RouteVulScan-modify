@@ -52,7 +52,7 @@ public class View extends AbstractTableModel {
                     if (column == 0) {
                         LogEntry logEntry = log.get(row);
                         Map<String, Object> add_map = new HashMap<String, Object>();
-                        add_map.put("id", Integer.parseInt(logEntry.id));
+                        add_map.put("id", YamlUtil.safeParseId(logEntry.id));
                         add_map.put("type", logEntry.type);
                         add_map.put("loaded", !logEntry.loaded);
                         add_map.put("name", logEntry.name);

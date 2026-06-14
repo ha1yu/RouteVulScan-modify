@@ -2,13 +2,19 @@ package yaml;
 
 import burp.BurpExtender;
 import func.init_Yaml_thread;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import javax.swing.*;
 import java.io.*;
 import java.util.*;
 
 public class YamlUtil {
+
+    // 反序列化统一走安全构造器,杜绝 CVE-2022-1471(默认 Constructor 可触发任意类构造)。
+    // 2.0+ 默认 new Yaml() 已继承 SafeConstructor,这里显式传入以表明意图、不依赖版本默认行为。
+    private static final SafeConstructor SAFE_CONSTRUCTOR = new SafeConstructor(new LoaderOptions());
 
     public static void init_Yaml(BurpExtender burp, JPanel one) {
         new init_Yaml_thread(burp, one).start();
@@ -20,7 +26,7 @@ public class YamlUtil {
         Map<String, Object> data = null;
         try {
             InputStream inputStream = new FileInputStream(file);
-            Yaml yaml = new Yaml();
+            Yaml yaml = new Yaml(SAFE_CONSTRUCTOR);
             data = yaml.load(inputStream);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -92,7 +98,7 @@ public class YamlUtil {
 
     public static Map<String, Object> readStrYaml(String str){
         Map<String, Object> data = null;
-        Yaml yaml = new Yaml();
+        Yaml yaml = new Yaml(SAFE_CONSTRUCTOR);
         data = yaml.load(str);
         return data;
     }
@@ -110,9 +116,9 @@ public class YamlUtil {
         // 计算当前最大 id,新增规则递增分配
         int maxId = 0;
         for (Map<String, Object> zidian : oldYamlList) {
-            Object idObj = zidian.get("id");
-            if (idObj instanceof Integer && (Integer) idObj > maxId) {
-                maxId = (Integer) idObj;
+            int cur = YamlUtil.safeParseId(zidian.get("id"));
+            if (cur > maxId) {
+                maxId = cur;
             }
         }
         for (Map<String, Object> i : newYamlList){
@@ -167,6 +173,25 @@ public class YamlUtil {
             }
         }
         return mapEqual;
+    }
+
+
+    /**
+     * 把任意类型的 id 安全转为 int;无法解析(含 null、空串、非数字)时返回 -1,
+     * 调用方按"跳过该条"处理。
+     *
+     * <p>统一 id 在 YAML(Integer)、内存 LogEntry(String)、UI 输入(String)间的类型差异,
+     * 替代散落各处的 {@code (int) cast} / {@code Integer.parseInt},避免 ClassCastException / NumberFormatException。
+     */
+    public static int safeParseId(Object idObj) {
+        if (idObj == null) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(String.valueOf(idObj).trim());
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
 

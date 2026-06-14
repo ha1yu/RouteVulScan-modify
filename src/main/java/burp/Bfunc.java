@@ -89,32 +89,60 @@ public class Bfunc {
     }
 
     public static Collection<Integer> StatusCodeProc(String state){
+        // null/空串:无法判定,返回空集合(规则静默失效,不崩溃)
+        if (state == null || state.trim().isEmpty()) {
+            return new ArrayList<Integer>();
+        }
+        String trimmed = state.trim();
         Collection<Integer> stateList = new ArrayList<Integer>();
+        // any/all/* 视为匹配全部 HTTP 状态码(让 Config UI 默认占位 "any" 真正生效)
+        if (trimmed.equalsIgnoreCase("any") || trimmed.equals("*") || trimmed.equalsIgnoreCase("all")) {
+            for (int i = 100; i <= 599; i++) {
+                stateList.add(i);
+            }
+            return stateList;
+        }
         if (state.length() != 3 && (state.contains(",") || state.contains("-"))){
             if (state.contains(",")){
                 String[] states = state.split(",");
                 for (String OneState:states){
                     if (OneState.contains("-")){
                         String[] parts = OneState.split("-");
-                        int start = Integer.parseInt(parts[0]);
-                        int end = Integer.parseInt(parts[1]);
-                        for (int i = start; i <= end; i++) {
-                            stateList.add(i);
+                        try {
+                            int start = Integer.parseInt(parts[0]);
+                            int end = Integer.parseInt(parts[1]);
+                            for (int i = start; i <= end; i++) {
+                                stateList.add(i);
+                            }
+                        } catch (NumberFormatException ignore) {
+                            // 范围格式非法(如 "abc-def"),跳过该段
                         }
                     }else if (OneState.length() == 3){
-                        stateList.add(Integer.valueOf(OneState));
+                        try {
+                            stateList.add(Integer.valueOf(OneState));
+                        } catch (NumberFormatException ignore) {
+                            // 单值非数字,跳过
+                        }
                     }
                 }
             }else if (state.contains("-")){
                 String[] parts = state.split("-");
-                int start = Integer.parseInt(parts[0]);
-                int end = Integer.parseInt(parts[1]);
-                for (int i = start; i <= end; i++) {
-                    stateList.add(i);
+                try {
+                    int start = Integer.parseInt(parts[0]);
+                    int end = Integer.parseInt(parts[1]);
+                    for (int i = start; i <= end; i++) {
+                        stateList.add(i);
+                    }
+                } catch (NumberFormatException ignore) {
+                    // 范围格式非法,返回空集合
                 }
             }
         }else {
-            stateList.add(Integer.valueOf(state));
+            try {
+                stateList.add(Integer.valueOf(trimmed));
+            } catch (NumberFormatException ignore) {
+                // 兜底:非数字(如 "any" 以外的乱码)返回空集合,规则静默失效而非崩溃整个扫描线程
+            }
         }
         return stateList;
 
@@ -130,12 +158,20 @@ public class Bfunc {
             String marking = url.substring(url.indexOf("{{"), url.lastIndexOf("}}") + 2);
             String markingContent = marking.replace("{{", "").replace("}}", "").toLowerCase();
             String[] parts = markingContent.split("\\.");
+            // 守卫:形如 {{request}}(无子键)直接原样返回,避免访问 parts[1] 越界
+            if (parts.length < 2) {
+                return url;
+            }
             IHttpService httpservice = HttpRequestResponse.getHttpService();
             switch (parts[0]){
                 case "request":
                     IRequestInfo request = vul.burp.help.analyzeRequest(HttpRequestResponse);
                     switch (parts[1]){
                         case "head":
+                            // {{request.head}}(无 header 名)无法取值,原样返回
+                            if (parts.length < 3) {
+                                return url;
+                            }
                             Map<String, String> heads = Bfunc.ProceHead(request.getHeaders());
                             if (parts[2].equals("host") && parts.length >3){
                                 switch (parts[3]){
@@ -164,6 +200,10 @@ public class Bfunc {
                         IResponseInfo response = vul.burp.help.analyzeResponse(xiangying);
                         switch (parts[1]){
                             case "head":
+                                // {{response.head}}(无 header 名)无法取值,原样返回
+                                if (parts.length < 3) {
+                                    return url;
+                                }
                                 Map<String, String> heads = Bfunc.ProceHead(response.getHeaders());
                                 return replaceOn(url,marking,heads.get(parts[2]),escape);
                             case "status":

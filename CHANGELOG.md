@@ -2,6 +2,27 @@
 
 本文件记录 RouteVulScan 的重要变更,格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## [Unreleased]
+### 安全(Security)
+- **SnakeYAML 反序列化(CVE-2022-1471)**:`snakeyaml 1.28 → 2.2`,`YamlUtil` 读取/解析路径统一走显式 `SafeConstructor(new LoaderOptions())`,杜绝默认 Constructor 对(含远程拉取的)YAML 触发任意类构造。
+
+### 修复(Fixes)
+- **id 类型不统一崩溃**:新增 `YamlUtil.safeParseId(Object)` 统一转换入口,替换 `Config.Add_Button_Yaml` 的 `(int) cast`(遇 String id 直接 `ClassCastException`)、`View`/`Config.Edit`/`TabTitleEditListener.renameTabTitle` 的 `Integer.parseInt`(遇非数字抛 `NumberFormatException`);`MergerUpdateYamlFunc` 的 maxId 计算改用 `safeParseId`,覆盖 String 形式的合法数字 id。
+- **模板标记数组越界**:`ProcTemplateLanguag` 对 `{{request}}`/`{{request.head}}` 等缺子键/缺 header 名的标记加索引守卫,原样返回而非 `ArrayIndexOutOfBoundsException`。
+- **状态码解析崩溃**:`StatusCodeProc` 兜底分支对非数字(乱码/空串)异常兜底返回空集合;`any`/`all`/`*` 视为匹配全部 HTTP 状态码(100-599),让 Config UI 默认占位 `any` 真正生效;范围/单值解析失败静默跳过该段。
+
+### 重构(Refactor)
+- **`vulscan` 重型构造器**:构造器瘦身为仅做字段初始化 + 创建线程池;原扫描逻辑(POST 转换、删参、读 YAML、`LaunchPath` 两轮、`finally shutdown`)移至新增的 `public void scan()`。调用点改为 `new vulscan(...).scan()`(仅 `BurpExtender` 两处)。可读性/可测性提升,`threads` 与现有 static 方法/`Unsafe.allocateInstance` 测试不受影响。
+
+### 构建(Build)
+- 构建系统由 Gradle 迁移至 Maven:新增 `pom.xml`,移除 `build.gradle`。
+- `maven-shade-plugin`(替代 Shadow)打 fat jar,`maven-surefire-plugin 3.5.2` 运行 JUnit 5 测试。
+- 构建命令:`mvn clean package` → `target/RouteVulScan-1.6.0.jar`。
+- 清理 Gradle 残留目录:`build/`、`.gradle/`、`lib/`(rt.jar 已于 1.6.0 移除);`.gitignore` 新增 `lib`。
+
+### 测试(Tests)
+- 单元测试 49 → 61 例(全绿):新增 `StatusCodeProcTest`(`any`/`*`/`null`/乱码)、`ProcTemplateLanguagTest`(`{{request}}`/`{{request.head}}` 越界守卫)、`SafeParseIdTest`(Integer/String/空白/非数字/null)。
+
 ## [1.6.0] - 2026-06-13
 
 ### 修复(Fixes)

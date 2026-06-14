@@ -29,12 +29,28 @@ public class vulscan {
 
     private ExecutorService pool;
 
+    // 待扫描的请求(构造器接收,可能为 null;scan() 内部归一化)
+    private byte[] request;
+
 
     public vulscan(BurpExtender burp, BurpAnalyzedRequest Root_Request,byte[] request) {
         this.burp = burp;
         this.call = burp.call;
         this.help = burp.help;
         this.Root_Request = Root_Request;
+        this.request = request;
+        // 仅做轻量字段初始化,不触发任何扫描副作用(原重逻辑移至 scan())。
+        // 线程池在此创建,与实例生命周期绑定,scan() 的 finally 负责 shutdown。
+        this.pool = Executors.newFixedThreadPool((Integer) burp.Config_l.spinner1.getValue());
+    }
+
+    /**
+     * 执行一次完整的多层路径扫描。
+     *
+     * <p>原本这堆逻辑写在构造器里(构造即扫描),既无法测试又难以阅读;现抽出为独立方法,
+     * 调用方显式触发:{@code new vulscan(...).scan()}。
+     */
+    public void scan() {
         // 获取httpService对象
         if (request == null){
             request = this.Root_Request.requestResponse().getRequest();
@@ -44,7 +60,6 @@ public class vulscan {
         httpService = this.Root_Request.requestResponse().getHttpService();
         IRequestInfo analyze_Request = help.analyzeRequest(httpService, request);
         List<String> heads = analyze_Request.getHeaders();
-        this.pool = Executors.newFixedThreadPool((Integer) burp.Config_l.spinner1.getValue());
 
 
         // 判断请求方法为POST(必须用 equals 比较,原 == 比较引用恒为 false,导致 POST→GET 转换永不生效)

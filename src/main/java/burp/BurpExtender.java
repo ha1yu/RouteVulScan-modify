@@ -95,7 +95,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck, IContextMenuF
                     if (this.urlC.check(Root_Method, New_Url)) {
                         return null;
                     }
-                    new vulscan(this, Root_Request,null);
+                    new vulscan(this, Root_Request,null).scan();
                     this.urlC.addMethodAndUrl(Root_Method, New_Url);
                     try {
                         this.DomainName.add(Root_Url);
@@ -315,7 +315,7 @@ class start_send extends Thread {
     }
 
     public void run() {
-        new vulscan(this.burp, this.Root_Request,this.request);
+        new vulscan(this.burp, this.Root_Request,this.request).scan();
     }
 
 }

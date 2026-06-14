@@ -32,6 +32,8 @@ src/main/java/.DS_Store
 .idea
 .gradle
 build
+target
+lib
 
 
 

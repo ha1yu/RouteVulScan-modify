@@ -53,7 +53,7 @@ class TabTitleEditListener extends MouseAdapter implements ChangeListener, Docum
                 if (view != null){
                     for (View.LogEntry logEntry : view.log){
                         Map<String,Object> up_map = new Hashtable<String,Object>();
-                        up_map.put("id", Integer.parseInt(logEntry.id));
+                        up_map.put("id", YamlUtil.safeParseId(logEntry.id));
                         up_map.put("type", title);
                         up_map.put("loaded", logEntry.loaded);
                         up_map.put("name", logEntry.name);
