@@ -4,7 +4,7 @@
 filter_host: '*'
 black_host: '*.baidu.com,*.qianxin.com,fofa.info'
 # Bypass_List: ['/', '.', '..', ';', '..', '..;', '../', '/..;/', 'c']
-Bypass_List: ['%2f', '%2e', '..', ';', '%2e%2e', '..;', '%2e%2e/', '/..;/', '%63']
+Bypass_List: ['%2f', '%2e', '..', ';', '%2e%2e', '..;', '%2e%2e/', '/..;/']
 Load_List:
   - {re: nacos, name: Nacos, id: 1, state: '200', url: /nacos/index.html, info: Nacos
     Find!!!, type: default, loaded: true}
