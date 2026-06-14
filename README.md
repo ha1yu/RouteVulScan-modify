@@ -1,13 +1,7 @@
-# RouteVulScan
+# RouteVulScan-modify
 Burpsuite - Route Vulnerable scanning  递归式被动检测脆弱路径的burp插件
 
 ***
-
-## 贡献
-
-* 合作者 [@deep0](https://github.com/deep0)
-* 规则贡献 [@r0fus0d](https://github.com/No-Github)
-* 参考项目 [HAE](https://github.com/gh0stkey/HaE)
 
 ## 介绍
 
@@ -18,20 +12,6 @@ RouteVulScan是使用java语言基于burpsuite api开发的可以递归检测脆
 插件重点是那些简单而有害的漏洞。这些漏洞通常不是固定路径，但可能位于路径的任何层。在这种情况下，非常容易忽视这些漏洞，而如果使用路径爆破，则非常耗时和麻烦。
 
 所以插件主打是发送数量小、准确的payload，尽可能覆盖面广的探测一些容易忽略的漏洞。
-
-## 推荐使用方式
-推荐一下我本人使用插件的方式
-首先配置处，只打开Head按钮，如下
-
-<img src="./img/Recommend1.jpg">
-
-然后正常测试网站，测试时多点一点各个功能，在这个站测试完毕后，选中任意一个请求发送到插件。
-
-<img src="./img/Recommend2.jpg">
-
-这样测试可以跳过那些杂七杂八的网站，只针对这一个站进行测试，且也能扫描到整个站的角角落落。
-
-测吧，一测一个不吱声。
 
 
 ## 使用
@@ -59,8 +39,6 @@ mvn clean test
 
 插件支持在线更新，点击Update按钮更新追加最新规则。部分网络需要挂代理，在线更新使用的是burp网络，所以可以直接配置burp的顶级代理。
 
-<img src="./img/update.jpg">
-
 ## 功能介绍
 
 * 被动扫描，使用Burpsuite IScannerCheck接口，在流量初次流经burp时进行扫描，重复流量不会进行扫描。
@@ -78,23 +56,32 @@ mvn clean test
 
 * Bypass按钮，不符合预期时将配置文件中的bypass字符添加到路径中重新扫描，默认关闭
 
-* Filter_Host 输入框，可以只扫描指定host的url，*代表全部，如 *.baidu.com
+* Filter_Host 输入框，被动扫描的 host 白名单过滤器，只对 host 匹配该输入的流量进行扫描。`*` 代表匹配全部（默认），如 `*.baidu.com` 只扫描百度系域名。
+
+  * **仅对被动扫描生效**。右键「Send To RouteVulScan」主动扫描不走此过滤，会直接扫描站点地图中同 host 的所有历史路径。
+  * **输入按通配符转正则后部分匹配**（`Pattern.find`）：`.` 转义为字面量 `\.`，`*` 转换为 `.*?`。即输入会被当成"包含匹配"而非"精确匹配"。
+
+    | 输入 | 转换后的正则 | 匹配的 host |
+    |------|------------|------------|
+    | `*`（默认） | `.*?` | 所有 host |
+    | `*.baidu.com` | `.*?\.baidu\.com` | `www.baidu.com`、`pan.baidu.com`… |
+    | `baidu.com` | `baidu\.com` | 任何包含 `baidu.com` 的 host |
+    | `192.168.1.*` | `192\.168\.1\..*?` | `192.168.1.1` ~ `192.168.1.254` |
+    | `*test*` | `.*?test.*?` | 任何含 `test` 的 host |
+
+  * **注意**：因采用部分匹配，输入 `baidu` 也会命中 `evilbaidu.com`、`baidu.com.evil.com` 这类包含子串的 host。若需限定子域，请写成 `.*?\.baidu\.com`。
 
 * VulDisplay界面右键可删除选中的行，或全部删除
 
-  <img src="./img/remove.jpg">
-
 * 右键请求可选择将当前请求发送到插件进行主动扫描，插件会将站点地图中，与当前请求使用一样host的历史路径全部进行扫描
-
-  <img src="./img/Active_scan.jpg">
 
 * 规则中可使用特殊标记获取原始请求或响应中的信息，用作请求的路径或正则。
 
   ```
   请求相关：
     {{request.head.*}}	-- 获取请求中head的各项，如获取cookie，{{request.head.cookie}}
-    	{{request.head.host.main}}	-- 获取host的根域名，如www.baidu.com:443，则获取baidu.com
-    	{{request.head.host.name}}	-- 获取域名，如www.baidu.com:443，则获取baidu
+    {{request.head.host.main}}	-- 获取host的根域名，如www.baidu.com:443，则获取baidu.com
+    {{request.head.host.name}}	-- 获取域名，如www.baidu.com:443，则获取baidu
     {{request.method}}	-- 获取请求的方法，如GET/POST
     {{request.path}}	-- 获取请求的路径，如/aaa/bbb，则获取aaa/bbb
     {{request.url}}	-- 获取完整请求url
@@ -133,16 +120,7 @@ mvn clean test
   - `vulscan` 重型构造器拆分为 `scan()`,可读性与可测性提升【✓】
   - Java 字节码目标 1.8 → 21(对齐 Burp 自 2024.2.1 起的最低内置 JRE),消除全部 "源值/目标值 8 已过时" 编译警告【✓】
   - 单元测试扩充至 61 例(全绿)【✓】详见 [CHANGELOG.md](./CHANGELOG.md)
-
-## 开心值
-
-[![Stargazers over time](https://starchart.cc/F6JO/RouteVulScan.svg)](https://starchart.cc/F6JO/RouteVulScan)
-
-## 最后
-
-***
-
-### 如有正则、BUG、需求等欢迎提Issues
-
-​	
+* 2026-06-14 UI 与文档优化:
+  - 修复 Config 面板按钮/标签文字被遮挡(JButton 默认 margin 过大),统一压边并重排布局【✓】
+  - README 补充 `Filter_Host` 过滤器使用说明(被动扫描专用、通配符转正则、部分匹配语义、用法对照表)【✓】
 

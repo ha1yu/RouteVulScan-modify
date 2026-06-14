@@ -120,7 +120,7 @@ public class Config {
     private void $$$setupUI$$$() {
         one = new JPanel();
         one.setLayout(null);
-        one.setBounds(0, 0, 1180, 500);
+        one.setBounds(0, 0, 1320, 500);
 
 
         // Yaml File Path 文本展示框
@@ -131,27 +131,29 @@ public class Config {
         txtfield1 = new JTextField();   //创建文本框
         txtfield1.setText(yaml_path);    //设置文本框的内容
         txtfield1.setEditable(false);
-        txtfield1.setBounds(110, 35, 772, 20);
+        txtfield1.setBounds(110, 35, 720, 20);
 
 
         // Online Update按钮
         JButton Online_Update_button = new JButton("Update");
-        Online_Update_button.setBounds(886, 34, 87, 23);
+        Online_Update_button.setMargin(new Insets(1, 6, 1, 6));
+        Online_Update_button.setBounds(840, 34, 100, 23);
         Online_Update_Yaml(Online_Update_button);
 
         // load 按钮
         JButton load_button = new JButton("Load Yaml");
-        load_button.setBounds(980, 34, 87, 23);
+        load_button.setMargin(new Insets(1, 6, 1, 6));
+        load_button.setBounds(950, 34, 110, 23);
         load_button_Yaml(load_button);
 
         // 线程选择
         JLabel thread_num = new JLabel("Thread Numbers:");
-        thread_num.setBounds(1074, 20, 100, 50);
+        thread_num.setBounds(1070, 20, 130, 50);
         SpinnerNumberModel model1 = new SpinnerNumberModel(10, 1, 500, 3);
         this.spinner1 = new JSpinner(model1);
         ((JSpinner.DefaultEditor) this.spinner1.getEditor()).getTextField().setEditable(false);
 
-        this.spinner1.setBounds(1168, 34, 100, 23);
+        this.spinner1.setBounds(1210, 34, 100, 23);
 
 
 
@@ -177,7 +179,7 @@ public class Config {
         // 展示界面容器
         ruleTabbedPane = new JTabbedPane();
         this.ruleSwitch = new TabTitleEditListener(ruleTabbedPane, this.burp);
-        ruleTabbedPane.setBounds(80, 60, 1185, 740);
+        ruleTabbedPane.setBounds(80, 60, 1230, 740);
         Bfunc.show_yaml(burp);
         ruleTabbedPane.addMouseListener(ruleSwitch);
 
@@ -189,7 +191,8 @@ public class Config {
         // 开启按钮
 //        JButton on_off_button = new JButton("Stop");
         JButton on_off_button = new JButton("Start");
-        on_off_button.setBounds(20, 5, 70, 23);
+        on_off_button.setMargin(new Insets(1, 6, 1, 6));
+        on_off_button.setBounds(20, 5, 80, 23);
         Color Primary = on_off_button.getBackground();
 //        on_off_button.setBackground(Color.green);
         on_off_Button_action(on_off_button, Primary);
@@ -200,32 +203,35 @@ public class Config {
 
         // 携带head按钮
         JButton carry_head_button = new JButton("Head_On");
-        carry_head_button.setBounds(150, 5, 90, 23);
+        carry_head_button.setMargin(new Insets(1, 6, 1, 6));
+        carry_head_button.setBounds(110, 5, 110, 23);
         carry_head_Button_action(carry_head_button, Primary);
 
 
         // DomainScan按钮
         JButton DomainScan_button = new JButton("DomainScan_On");
-        DomainScan_button.setBounds(300, 5, 90, 23);
+        DomainScan_button.setMargin(new Insets(1, 6, 1, 6));
+        DomainScan_button.setBounds(230, 5, 160, 23);
         DomainScan_Button_action(DomainScan_button, DomainScan_button.getBackground());
 
 
 
         // bypass按钮
         JButton bypass_button = new JButton("Bypass_On");
-        bypass_button.setBounds(450, 5, 90, 23);
+        bypass_button.setMargin(new Insets(1, 6, 1, 6));
+        bypass_button.setBounds(400, 5, 110, 23);
         bypass_Button_action(bypass_button, bypass_button.getBackground());
 
 
 
         // Filter_Host 文本展示框
         JLabel Filter_Host = new JLabel("Filter_Host:");
-        Filter_Host.setBounds(623, -10, 100, 50);
+        Filter_Host.setBounds(510, -10, 100, 50);
 
         // Host 输入框
         JTextField Host_txtfield = new JTextField();   //创建文本框
         Host_txtfield.setText("*");    //设置文本框的内容
-        Host_txtfield.setBounds(698, 5, 572, 20);
+        Host_txtfield.setBounds(620, 5, 660, 20);
         burp.Host_txtfield = Host_txtfield;
 
 

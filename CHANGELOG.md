@@ -3,6 +3,12 @@
 本文件记录 RouteVulScan 的重要变更,格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
 ## [Unreleased]
+### 修复(Fixes)
+- **UI 控件文字被遮挡**:`Config` 面板顶部 `Head_On`、`DomainScan_On`、`Bypass_On`、`Update`、`Load Yaml` 按钮及 `Thread Numbers` 标签在中文/高 DPI 环境下文字被裁切。根因是 `JButton` 默认 margin(左右约 14px)从内部挤占文字空间,单纯加宽无效。统一 `setMargin(new Insets(1,6,1,6))` 压掉内边距,并按文字长度重排 `setBounds`(`DomainScan` 150→160 容纳 `DomainScan_Off`,面板总宽 1180→1320)。
+
+### 文档(Docs)
+- README 补充 `Filter_Host` 输入框说明:被动扫描专用、`.`/`*` 通配符→正则转换规则、`Pattern.find` 部分匹配语义、常见用法对照表及子串误匹配注意事项;清理功能介绍中误删图片残留的空列表项。
+
 ### 安全(Security)
 - **SnakeYAML 反序列化(CVE-2022-1471)**:`snakeyaml 1.28 → 2.2`,`YamlUtil` 读取/解析路径统一走显式 `SafeConstructor(new LoaderOptions())`,杜绝默认 Constructor 对(含远程拉取的)YAML 触发任意类构造。
 
